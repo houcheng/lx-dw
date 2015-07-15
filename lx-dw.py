@@ -1,9 +1,21 @@
+#
+# gdb data window feature for Linux kernel debugging
+#
+#
+# Authors:
+#  Houcheng Lin <houcheng@gmail.com>
+#
+# This work is licensed under the terms of the GNU GPL version 2.
+#
+
 import os, time, sys
 import curses, time
 
+''' for curses control '''
 global stdscr
 stdscr = curses.initscr()
 prevlen = 0
+
 def update(filename):
     global prevlen
     fd = open(filename, 'r')
@@ -30,6 +42,7 @@ def update(filename):
     prevlen = count
     fd.close()
 
+''' main display loop '''
 file = '/tmp/' + sys.argv[1]
 pretime = None
 while True:

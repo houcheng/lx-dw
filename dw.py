@@ -1,7 +1,19 @@
+#
+# gdb data window feature for Linux kernel debugging
+#
+#
+# Authors:
+#  Houcheng Lin <houcheng@gmail.com>
+#
+# This work is licensed under the terms of the GNU GPL version 2.
+#
+
 from __future__ import with_statement
 from __future__ import print_function
+
 import gdb
 import re, sys, binascii, struct, os
+
 from array import *
 
 def getVar(var):
@@ -9,11 +21,6 @@ def getVar(var):
     base = int(str.split('=')[1].strip().lstrip().replace('`', ''), 16)
     return base
 
-'''
-    1. redirect content to file with auto flush
-    2. ordered list
-    3. colored display difference
-'''
 class CmdWindow:
     def __init__(self, file, cmd, DecoClass):
         self.cmd = cmd
@@ -91,12 +98,15 @@ class RegDecoWindow(DecoWindow):
             output = prefix + i + '\t' + v.split()[1]
         print(output, file=self.file)
         self.file.flush()
+
+'''store watch variables '''
 global LxWatch
 LxWatch = {}
 LxWatch[1] = "p $lx_current().comm"
 LxWatch[2] = "x/32x $rsp"
 LxWatch[3] = "x/8i $rip"
 
+''' Watch data window's decorator'''
 class WatchDecoWindow(DecoWindow):
     def __init__(self, filename):
         DecoWindow.__init__(self, filename)
@@ -120,7 +130,6 @@ class WatchWindow(CmdWindow):
     def __init__(self, file, cmd, DecoClass):
         CmdWindow.__init__(self, file, cmd, DecoClass)
     def refresh(self, events):
-        print(LxWatch)
         for index in LxWatch:
             cmd = LxWatch[index]
             try:
@@ -143,19 +152,20 @@ class LxGuiFUnction(gdb.Command):
     def __init__ (self):
         gdb.Command.__init__(self, "lx-dw", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
-        if (arg != "Stop" and arg != "stop" ):
-            regw = CmdWindow('/tmp/reg-dw', 'info reg', RegDecoWindow)
-            btw = CmdWindow('/tmp/bt-dw', 'bt', RegDecoWindow)
-            watchw = WatchWindow('/tmp/watch-dw', '', WatchDecoWindow)
-            gdb.events.stop.connect(regw.refresh)
-            gdb.events.stop.connect(btw.refresh)
-            gdb.events.stop.connect(watchw.refresh)
-        else:
+        if (arg == "off"):
             try:
-                gdb.events.stop.disconnect(FifoStopHandler)
-                gdb.events.exited.disconnect(FifoRemover)
+                gdb.events.stop.disconnect(self.regw.refresh)
+                gdb.events.stop.disconnect(self.btw.refresh)
+                gdb.events.stop.disconnect(self.watchw.refresh)
             except:
                 pass
+        else:
+            self.regw = CmdWindow('/tmp/reg-dw', 'info reg', RegDecoWindow)
+            self.btw = CmdWindow('/tmp/bt-dw', 'bt', RegDecoWindow)
+            self.watchw = WatchWindow('/tmp/watch-dw', '', WatchDecoWindow)
+            gdb.events.stop.connect(self.regw.refresh)
+            gdb.events.stop.connect(self.btw.refresh)
+            gdb.events.stop.connect(self.watchw.refresh)
 LxGuiFUnction()
 
 def findLxWatchSlot():
@@ -170,7 +180,6 @@ class LxAddFunction(gdb.Command):
     def __init__ (self):
         gdb.Command.__init__(self, "lx-add", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
-        # print(arg.split())
         index = findLxWatchSlot()
         LxWatch[index] = arg
         print(LxWatch)

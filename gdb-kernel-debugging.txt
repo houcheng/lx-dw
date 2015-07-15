@@ -139,6 +139,14 @@ Examples of using the Linux-provided gdb helpers
       start_comm = "swapper/2\000\000\000\000\000\000"
     }
 
+ o Enable the debugging data window feature in GDB, then run lx-dw.sh script
+   to create three xterm console on desktop to display the CPU registers, 
+   back trace and variables.
+    (gdb) lx-dw
+    (gdb) lx-add p $lx_current().comm
+    (gdb) lx-add x/8x $rsp
+    (gdb) lx-add x/8i $rip
+
 
 List of commands and functions
 ------------------------------
@@ -153,6 +161,7 @@ this is just a snapshot of the initial version:
  function lx_task_by_pid -- Find Linux task by PID and return the task_struct variable
  function lx_thread_info -- Calculate Linux thread_info from task variable
  lx-dmesg -- Print Linux kernel log buffer
+ lx-dw -- Enable GDB data window feature
  lx-lsmod -- List currently loaded modules
  lx-symbols -- (Re-)load symbols of Linux kernel and currently loaded modules
 
