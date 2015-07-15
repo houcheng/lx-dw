@@ -18,41 +18,23 @@ class CmdWindow:
 	def __init__(self, file, cmd, DecoClass):
 		self.cmd = cmd
 		self.file = file
-		self.values = {}
-		self.pre = {}
 		self.decowin = DecoClass(file)
-	def update(self, valuelist):
-		print('update valuelist')
-		print(valuelist)
-		for (i, v) in valuelist:
-			try:
-				prevalue = self.pre[i]
-			except:
-				prevalue = None
-			self.decowin.insertLine(i, v, prevalue)
-			self.pre[i] = v
 	def refresh(self, events):
 		try:
 			regstr = gdb.execute(self.cmd, False, True)
 		except:
 			regstr = 'Exception occurred'
-		vlist = self.parse(regstr)
-		self.update(vlist)
+		v = self.decowin.parse(regstr)
+		self.decowin.update(v)
 		self.decowin.refresh()
-	def parse(self, regstr):
-		vlist = []
-		for line in regstr.split('\n'):
-			if len(line.strip()) == 0:
-				continue
-			vlist.append((line.split()[0], line))
-		return vlist
 
 class DecoWindow:
 	def __init__(self, filename):
 		self.filename = filename
 		self.file = None
+		self.pre = {}
+		self.pre2 = {}
 	def insertLine(self, i, v, prev):
-		print("call insert line:%s"%i)
 		if self.file == None:
 			self.file = open(self.filename, 'w')
 		if v == prev:
@@ -60,12 +42,28 @@ class DecoWindow:
 		else:
 			print('@@' + v, file=self.file)
 		self.file.flush()
+	def update(self, valuelist):
+		for (i, v) in valuelist:
+			try:
+				prevalue = self.pre[i]
+			except:
+				prevalue = None
+			self.insertLine(i, v, prevalue)
+			self.pre2[i] = v
+	def parse(self, regstr):
+		vlist = []
+		for line in regstr.split('\n'):
+			if len(line.strip()) == 0:
+				continue
+			vlist.append((line.split()[0], line))
+		return vlist
 	def refresh(self):
-		print("call refresh")
 		if self.file == None:
 			self.file = open(self.filename, 'w')
 		self.file.close()
 		self.file = None
+		self.pre = self.pre2
+		self.pre2 = {}
 
 def findRegAnnotate(regstr):
 	b = regstr.find('<')
@@ -95,6 +93,28 @@ class RegDecoWindow(DecoWindow):
 		self.file.flush()
 global LxWatch
 LxWatch = {}
+LxWatch[1] = "p $lx_current().comm"
+LxWatch[2] = "x/32x $rsp"
+LxWatch[3] = "x/8i $rip"
+
+class WatchDecoWindow(DecoWindow):
+	def __init__(self, filename):
+		DecoWindow.__init__(self, filename)
+	def parse(self, index, cmd, regstr):
+		vlist = []
+		vlist.append(('[%d]'%index, '[%d] '%index + cmd))
+		cmd0 = cmd.split()[0]
+		lineno = 0
+		for line in regstr.split('\n'):
+			if len(line.strip()) == 0:
+				continue
+			istr = '[%d](%d)'%(index, lineno)
+			if cmd0 == 'p':
+				vlist.append((istr, line.split('=')[1]))
+			else:
+				vlist.append((istr, line))
+			lineno = lineno + 1
+		return vlist
 
 class WatchWindow(CmdWindow):
 	def __init__(self, file, cmd, DecoClass):
@@ -107,9 +127,8 @@ class WatchWindow(CmdWindow):
 				regstr = gdb.execute(cmd, False, True)
 			except:
 				regstr = 'Exception occurred'
-			vlist = self.parse(index, regstr)
-			print('call update')
-			self.update(vlist)
+			v = self.decowin.parse(index, cmd, regstr)
+			self.decowin.update(v)
 		self.decowin.refresh()
 	def parse(self, index, regstr):
 		vlist = []
@@ -125,11 +144,11 @@ class LxGuiFUnction(gdb.Command):
 		gdb.Command.__init__(self, "lx-gui", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
 	def invoke (self, arg, from_tty):
 		if (arg != "Stop" and arg != "stop" ):
-			#regw = CmdWindow('/tmp/regw', 'info reg', RegDecoWindow)
-			#btw = CmdWindow('/tmp/btw', 'bt', RegDecoWindow)
-			watchw = WatchWindow('/tmp/watchw', '', RegDecoWindow)
-			#gdb.events.stop.connect(regw.refresh)
-			#gdb.events.stop.connect(btw.refresh)
+			regw = CmdWindow('/tmp/regw', 'info reg', RegDecoWindow)
+			btw = CmdWindow('/tmp/btw', 'bt', RegDecoWindow)
+			watchw = WatchWindow('/tmp/watchw', '', WatchDecoWindow)
+			gdb.events.stop.connect(regw.refresh)
+			gdb.events.stop.connect(btw.refresh)
 			gdb.events.stop.connect(watchw.refresh)
 		else:
 			try:
