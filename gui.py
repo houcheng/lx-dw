@@ -22,29 +22,29 @@ class CmdWindow:
 		self.pre = {}
 		self.decowin = DecoClass(file)
 	def update(self, valuelist):
-		for v in valuelist:
-			i = v.split()[0]
+		print('update valuelist')
+		print(valuelist)
+		for (i, v) in valuelist:
 			try:
 				prevalue = self.pre[i]
 			except:
 				prevalue = None
 			self.decowin.insertLine(i, v, prevalue)
 			self.pre[i] = v
-		self.decowin.refresh()
 	def refresh(self, events):
 		try:
 			regstr = gdb.execute(self.cmd, False, True)
 		except:
-			regstr = '#0 exception occurred in python'
-			#print("Exception in python")
+			regstr = 'Exception occurred'
 		vlist = self.parse(regstr)
 		self.update(vlist)
+		self.decowin.refresh()
 	def parse(self, regstr):
 		vlist = []
 		for line in regstr.split('\n'):
 			if len(line.strip()) == 0:
 				continue
-			vlist.append(line)
+			vlist.append((line.split()[0], line))
 		return vlist
 
 class DecoWindow:
@@ -52,6 +52,7 @@ class DecoWindow:
 		self.filename = filename
 		self.file = None
 	def insertLine(self, i, v, prev):
+		print("call insert line:%s"%i)
 		if self.file == None:
 			self.file = open(self.filename, 'w')
 		if v == prev:
@@ -60,6 +61,9 @@ class DecoWindow:
 			print('@@' + v, file=self.file)
 		self.file.flush()
 	def refresh(self):
+		print("call refresh")
+		if self.file == None:
+			self.file = open(self.filename, 'w')
 		self.file.close()
 		self.file = None
 
@@ -89,6 +93,31 @@ class RegDecoWindow(DecoWindow):
 			output = prefix + i + '\t' + v.split()[1]
 		print(output, file=self.file)
 		self.file.flush()
+global LxWatch
+LxWatch = {}
+
+class WatchWindow(CmdWindow):
+	def __init__(self, file, cmd, DecoClass):
+		CmdWindow.__init__(self, file, cmd, DecoClass)
+	def refresh(self, events):
+		print(LxWatch)
+		for index in LxWatch:
+			cmd = LxWatch[index]
+			try:
+				regstr = gdb.execute(cmd, False, True)
+			except:
+				regstr = 'Exception occurred'
+			vlist = self.parse(index, regstr)
+			print('call update')
+			self.update(vlist)
+		self.decowin.refresh()
+	def parse(self, index, regstr):
+		vlist = []
+		for line in regstr.split('\n'):
+			if len(line.strip()) == 0:
+				continue
+			vlist.append(('[%d]'%index + line.split()[0], line))
+		return vlist
 
 class LxGuiFUnction(gdb.Command):
 	"""Enables handlers to send program data to specially named fifo pipes on program break"""
@@ -96,10 +125,12 @@ class LxGuiFUnction(gdb.Command):
 		gdb.Command.__init__(self, "lx-gui", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
 	def invoke (self, arg, from_tty):
 		if (arg != "Stop" and arg != "stop" ):
-			regw = CmdWindow('/tmp/regw', 'info reg', RegDecoWindow)
-			btw = CmdWindow('/tmp/btw', 'bt', RegDecoWindow)
-			gdb.events.stop.connect(regw.refresh)
-			gdb.events.stop.connect(btw.refresh)
+			#regw = CmdWindow('/tmp/regw', 'info reg', RegDecoWindow)
+			#btw = CmdWindow('/tmp/btw', 'bt', RegDecoWindow)
+			watchw = WatchWindow('/tmp/watchw', '', RegDecoWindow)
+			#gdb.events.stop.connect(regw.refresh)
+			#gdb.events.stop.connect(btw.refresh)
+			gdb.events.stop.connect(watchw.refresh)
 		else:
 			try:
 				gdb.events.stop.disconnect(FifoStopHandler)
@@ -108,8 +139,6 @@ class LxGuiFUnction(gdb.Command):
 				pass
 LxGuiFUnction()
 
-global LxWatch
-LxWatch = {}
 def findLxWatchSlot():
 	i = 1
 	while True:
