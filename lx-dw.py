@@ -9,7 +9,7 @@
 #
 
 import os, time, sys
-import curses, time
+import curses
 
 ''' for curses control '''
 global stdscr

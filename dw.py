@@ -12,14 +12,7 @@ from __future__ import with_statement
 from __future__ import print_function
 
 import gdb
-import re, sys, binascii, struct, os
 
-from array import *
-
-def getVar(var):
-    str = gdb.execute('p/x %s' % var, False, True)
-    base = int(str.split('=')[1].strip().lstrip().replace('`', ''), 16)
-    return base
 
 class CmdWindow:
     def __init__(self, file, cmd, DecoClass):
@@ -72,6 +65,7 @@ class DecoWindow:
         self.pre = self.pre2
         self.pre2 = {}
 
+
 def findRegAnnotate(regstr):
     b = regstr.find('<')
     if b>0:
@@ -98,6 +92,27 @@ class RegDecoWindow(DecoWindow):
             output = prefix + i + '\t' + v.split()[1]
         print(output, file=self.file)
         self.file.flush()
+
+''' decorate bt output string'''
+class BtDecoWindow(DecoWindow):
+    def __init__(self, filename):
+        DecoWindow.__init__(self, filename)
+    def parse(self, regstr):
+        vlist = []
+        lines = regstr.strip().split('\n')
+        # reverse the index order
+        index = len(lines)
+        for line in lines:
+            if len(line.strip()) == 0:
+                continue
+            # remove first token
+            line = line.replace(line.split()[0], '').lstrip()
+            line = ('#%-3d' % index ) + line
+            vlist.append((str(index), line))
+            index = index -1
+        print(vlist)
+        return vlist
+
 
 '''store watch variables '''
 global LxWatch
@@ -161,7 +176,7 @@ class LxGuiFUnction(gdb.Command):
                 pass
         else:
             self.regw = CmdWindow('/tmp/reg-dw', 'info reg', RegDecoWindow)
-            self.btw = CmdWindow('/tmp/bt-dw', 'bt', RegDecoWindow)
+            self.btw = CmdWindow('/tmp/bt-dw', 'bt', BtDecoWindow)
             self.watchw = WatchWindow('/tmp/watch-dw', '', WatchDecoWindow)
             gdb.events.stop.connect(self.regw.refresh)
             gdb.events.stop.connect(self.btw.refresh)
