@@ -28,4 +28,4 @@ else:
     import linux.dmesg
     import linux.tasks
     import linux.cpus
-    import linux.gui
+    import linux.dw

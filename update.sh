@@ -1,4 +1,4 @@
-cp *.py ~/source/linux/scripts/gdb/linux/
-rm ~/source/linux/scripts/gdb/linux/vmlinux-gdb.py
-cp vmlinux-gdb.py ~/source/linux/scripts/gdb/
-cp *.sh ~/source/linux/scripts/
+KERNEL=~/source/linux
+cp dw.py $KERNEL/scripts/gdb/linux/
+cp vmlinux-gdb.py $KERNEL/scripts/gdb/
+cp lx-dw.sh $KERNEL/scripts/

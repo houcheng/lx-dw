@@ -141,12 +141,12 @@ class WatchWindow(CmdWindow):
 class LxGuiFUnction(gdb.Command):
 	"""Enables handlers to send program data to specially named fifo pipes on program break"""
 	def __init__ (self):
-		gdb.Command.__init__(self, "lx-gui", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
+		gdb.Command.__init__(self, "lx-dw", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
 	def invoke (self, arg, from_tty):
 		if (arg != "Stop" and arg != "stop" ):
-			regw = CmdWindow('/tmp/regw', 'info reg', RegDecoWindow)
-			btw = CmdWindow('/tmp/btw', 'bt', RegDecoWindow)
-			watchw = WatchWindow('/tmp/watchw', '', WatchDecoWindow)
+			regw = CmdWindow('/tmp/reg-dw', 'info reg', RegDecoWindow)
+			btw = CmdWindow('/tmp/bt-dw', 'bt', RegDecoWindow)
+			watchw = WatchWindow('/tmp/watch-dw', '', WatchDecoWindow)
 			gdb.events.stop.connect(regw.refresh)
 			gdb.events.stop.connect(btw.refresh)
 			gdb.events.stop.connect(watchw.refresh)
