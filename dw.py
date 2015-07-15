@@ -139,7 +139,7 @@ class WatchWindow(CmdWindow):
         return vlist
 
 class LxGuiFUnction(gdb.Command):
-    """Enables handlers to send program data to specially named fifo pipes on program break"""
+    """Enable GDB data window feature."""
     def __init__ (self):
         gdb.Command.__init__(self, "lx-dw", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
@@ -166,6 +166,7 @@ def findLxWatchSlot():
         i = i +1
 
 class LxAddFunction(gdb.Command):
+    """Add one expression into watch data window."""
     def __init__ (self):
         gdb.Command.__init__(self, "lx-add", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
@@ -176,6 +177,7 @@ class LxAddFunction(gdb.Command):
 LxAddFunction()
 
 class LxDelFunction(gdb.Command):
+    """Remove one expression into watch data window."""
     def __init__ (self):
         gdb.Command.__init__(self, "lx-del", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
