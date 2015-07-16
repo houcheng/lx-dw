@@ -23,7 +23,7 @@ class CmdWindow:
         try:
             regstr = gdb.execute(self.cmd, False, True)
         except:
-            regstr = 'Exception occurred'
+            regstr = 'Exception on instruction:%s' % cmd
         v = self.decowin.parse(regstr)
         self.decowin.update(v)
         self.decowin.refresh()
@@ -68,11 +68,11 @@ class DecoWindow:
 
 def findRegAnnotate(regstr):
     b = regstr.find('<')
-    if b>0:
-        return regstr[b:regstr.find('>')+1]
+    if b > 0:
+        return regstr[b:regstr.find('>') + 1]
     b = regstr.find('[')
-    if b>0:
-        return regstr[b:regstr.find(']')+1]
+    if b > 0:
+        return regstr[b:regstr.find(']') + 1]
 
 
 class RegDecoWindow(DecoWindow):
@@ -93,7 +93,9 @@ class RegDecoWindow(DecoWindow):
         print(output, file=self.file)
         self.file.flush()
 
-''' decorate bt output string'''
+'''
+  decorate bt output string
+'''
 class BtDecoWindow(DecoWindow):
     def __init__(self, filename):
         DecoWindow.__init__(self, filename)
@@ -105,23 +107,29 @@ class BtDecoWindow(DecoWindow):
         for line in lines:
             if len(line.strip()) == 0:
                 continue
-            # remove first token
-            line = line.replace(line.split()[0], '').lstrip()
-            line = ('#%-3d' % index ) + line
+            if line.split()[0] == 'Exception':
+                pass
+            else:
+                # remove first token
+                line = line.replace(line.split()[0], '').lstrip()
+                line = ('#%-3d' % index ) + line
             vlist.append((str(index), line))
             index = index -1
-        print(vlist)
         return vlist
 
 
-'''store watch variables '''
+'''
+  store watch variables
+'''
 global LxWatch
 LxWatch = {}
 LxWatch[1] = "p $lx_current().comm"
 LxWatch[2] = "x/32x $rsp"
 LxWatch[3] = "x/8i $rip"
 
-''' Watch data window's decorator'''
+'''
+  Watch data window's decorator
+'''
 class WatchDecoWindow(DecoWindow):
     def __init__(self, filename):
         DecoWindow.__init__(self, filename)
@@ -133,7 +141,7 @@ class WatchDecoWindow(DecoWindow):
         for line in regstr.split('\n'):
             if len(line.strip()) == 0:
                 continue
-            istr = '[%d](%d)'%(index, lineno)
+            istr = '[%d](%d)' % (index, lineno)
             if cmd0 == 'p':
                 vlist.append((istr, line.split('=')[1]))
             else:
@@ -150,7 +158,7 @@ class WatchWindow(CmdWindow):
             try:
                 regstr = gdb.execute(cmd, False, True)
             except:
-                regstr = 'Exception occurred'
+                regstr = 'Exception on instruction:%s' % cmd
             v = self.decowin.parse(index, cmd, regstr)
             self.decowin.update(v)
         self.decowin.refresh()
@@ -159,15 +167,18 @@ class WatchWindow(CmdWindow):
         for line in regstr.split('\n'):
             if len(line.strip()) == 0:
                 continue
-            vlist.append(('[%d]'%index + line.split()[0], line))
+            vlist.append(('[%d]' % index + line.split()[0], line))
         return vlist
 
 class LxGuiFUnction(gdb.Command):
-    """Enable GDB data window feature."""
+    """Enable GDB data window feature.
+
+lx-dw: to enable the data window feature, including reg/ bt and watch data windows.
+    """
     def __init__ (self):
         gdb.Command.__init__(self, "lx-dw", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
-        if (arg == "off"):
+        if arg == "off":
             try:
                 gdb.events.stop.disconnect(self.regw.refresh)
                 gdb.events.stop.disconnect(self.btw.refresh)
@@ -181,6 +192,7 @@ class LxGuiFUnction(gdb.Command):
             gdb.events.stop.connect(self.regw.refresh)
             gdb.events.stop.connect(self.btw.refresh)
             gdb.events.stop.connect(self.watchw.refresh)
+
 LxGuiFUnction()
 
 def findLxWatchSlot():
@@ -191,21 +203,31 @@ def findLxWatchSlot():
         i = i +1
 
 class LxAddFunction(gdb.Command):
-    """Add one expression into watch data window."""
+    """Add gdb command into watch data window.
+
+lx-add <gdb-command>: add gdb command into watch data window; the command would be
+executed on every step or execution break and command results would be updated on
+to watch data window."""
+
     def __init__ (self):
         gdb.Command.__init__(self, "lx-add", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
         index = findLxWatchSlot()
         LxWatch[index] = arg
         print(LxWatch)
+
 LxAddFunction()
 
 class LxDelFunction(gdb.Command):
-    """Remove one expression into watch data window."""
+    """Remove one expression into watch data window.
+
+lx-del <id>: remove the gdb command from watch data window."""
+
     def __init__ (self):
         gdb.Command.__init__(self, "lx-del", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL, True)
     def invoke (self, arg, from_tty):
         index = int(arg)
         del LxWatch[index]
         print(LxWatch)
+
 LxDelFunction()
