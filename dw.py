@@ -142,8 +142,9 @@ class WatchDecoWindow(DecoWindow):
             if len(line.strip()) == 0:
                 continue
             istr = '[%d](%d)' % (index, lineno)
-            if cmd0 == 'p':
-                vlist.append((istr, line.split('=')[1]))
+            if cmd0 == 'p' and line.find('=') > 0:
+                line = line[line.find('=')+1:]
+                vlist.append((istr, line))
             else:
                 vlist.append((istr, line))
             lineno = lineno + 1
