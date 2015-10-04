@@ -46,7 +46,11 @@ def update(filename):
 file = '/tmp/' + sys.argv[1]
 pretime = None
 while True:
-    nowtime = os.path.getmtime(file)
+    try:
+        nowtime = os.path.getmtime(file)
+    except:
+        time.sleep(1)
+        continue
     if pretime != nowtime:
         update(file)
         pretime = nowtime

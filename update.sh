@@ -1,4 +1,5 @@
-KERNEL=~/source/linux
+[ "$1" = "" ] && KERNEL=../kernel/
+echo kernel is $KERNEL
 cp dw.py $KERNEL/scripts/gdb/linux/
 cp lx-dw.py $KERNEL/scripts/gdb/linux/
 cp vmlinux-gdb.py $KERNEL/scripts/gdb/
