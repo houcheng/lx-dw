@@ -8,6 +8,7 @@
 # This work is licensed under the terms of the GNU GPL version 2.
 #
 
+
 from __future__ import with_statement
 from __future__ import print_function
 
@@ -23,7 +24,7 @@ class CmdWindow:
         try:
             regstr = gdb.execute(self.cmd, False, True)
         except:
-            regstr = 'Exception on instruction:%s' % cmd
+            regstr = 'Exception on instruction:' + self.cmd
         v = self.decowin.parse(regstr)
         self.decowin.update(v)
         self.decowin.refresh()
@@ -159,7 +160,8 @@ class WatchWindow(CmdWindow):
             try:
                 regstr = gdb.execute(cmd, False, True)
             except:
-                regstr = 'Exception on instruction:%s' % cmd
+                #regstr = 'Exception on what'
+                regstr = 'Exception on instruction:' + cmd
             v = self.decowin.parse(index, cmd, regstr)
             self.decowin.update(v)
         self.decowin.refresh()

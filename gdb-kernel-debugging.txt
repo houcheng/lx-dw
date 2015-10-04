@@ -140,7 +140,7 @@ Examples of using the Linux-provided gdb helpers
     }
 
  o Enable the debugging data window feature in GDB, then run lx-dw.sh script
-   to create three xterm console on desktop to display the CPU registers, 
+   to create three xterm console on desktop to display the CPU registers,
    back trace and variables.
     (gdb) lx-dw
     (gdb) lx-add p $lx_current().comm
