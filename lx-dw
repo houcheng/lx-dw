@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export LXDW=.
+[ -f /usr/bin/lx-dw.py ] && export LXDW=/usr/bin/
+
+xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py bt-dw" &
+xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py reg-dw" &
+xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py watch-dw" &
