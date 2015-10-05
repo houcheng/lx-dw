@@ -29,16 +29,22 @@ class CmdWindow:
         self.decowin.update(v)
         self.decowin.refresh()
 
+'''
+basic deco window that hilight the changed items
+'''
 class DecoWindow:
     def __init__(self, filename):
         self.filename = filename
         self.file = None
         self.pre = {}
         self.pre2 = {}
+        self.stophi = False
+    def stopHilight(self):
+        self.stophi = True
     def insertLine(self, i, v, prev):
         if self.file == None:
             self.file = open(self.filename, 'w')
-        if v == prev:
+        if v == prev or self.stophi:
             print(v , file=self.file)
         else:
             print('@@' + v, file=self.file)
@@ -118,6 +124,30 @@ class BtDecoWindow(DecoWindow):
             index = index -1
         return vlist
 
+'''
+  decorate source list output string
+'''
+class SrcDecoWindow(DecoWindow):
+    def __init__(self, filename):
+        DecoWindow.__init__(self, filename)
+    def parse(self, regstr, lineno):
+        vlist = []
+        lines = regstr.strip().split('\n')
+        # reverse the index order
+        index = len(lines)
+        for line in lines:
+            if len(line.strip()) == 0:
+                continue
+            if line.split()[0] == 'Exception':
+                pass
+            if lineno == int (line.split()[0]):
+                line = '=>' + line
+            else:
+                line = '  ' + line
+            vlist.append((str(index), line))
+            index = index -1
+        return vlist
+
 
 '''
   store watch variables
@@ -173,6 +203,33 @@ class WatchWindow(CmdWindow):
             vlist.append(('[%d]' % index + line.split()[0], line))
         return vlist
 
+class SrcWindow(CmdWindow):
+    def __init__(self, file, cmd, DecoClass):
+        CmdWindow.__init__(self, file, cmd, DecoClass)
+        self.decowin.stopHilight()
+    def refresh(self, events):
+        try:
+            linestr = gdb.execute('info line', False, True)
+        except:
+            linestr = 'Exception on instruction:' + cmd
+        # format
+        # Line 579 of "/home/ec.c" is at address 0x55555560d398 <cpu_arm_exec+...
+        lineno=int(linestr.split(' ')[1])
+        filename=linestr.split(' ')[3].replace('"', '')
+        cmd='list %d,%d' % (lineno-12, lineno+12)
+        regstr = '0000                  [%s]\n' % filename
+        regstr += gdb.execute(cmd, False, True)
+        v = self.decowin.parse(regstr, lineno)
+        self.decowin.update(v)
+        self.decowin.refresh()
+    def parse(self, index, regstr):
+        vlist = []
+        for line in regstr.split('\n'):
+            if len(line.strip()) == 0:
+                continue
+            vlist.append(('[%d]' % index + line.split()[0], line))
+        return vlist
+
 class LxGuiFUnction(gdb.Command):
     """Enable GDB data window feature.
 
@@ -186,15 +243,18 @@ lx-dw: to enable the data window feature, including reg/ bt and watch data windo
                 gdb.events.stop.disconnect(self.regw.refresh)
                 gdb.events.stop.disconnect(self.btw.refresh)
                 gdb.events.stop.disconnect(self.watchw.refresh)
+                gdb.events.stop.disconnect(self.srcw.refresh)
             except:
                 pass
         else:
             self.regw = CmdWindow('/tmp/reg-dw', 'info reg', RegDecoWindow)
             self.btw = CmdWindow('/tmp/bt-dw', 'bt', BtDecoWindow)
             self.watchw = WatchWindow('/tmp/watch-dw', '', WatchDecoWindow)
+            self.srcw = SrcWindow('/tmp/src-dw', '', SrcDecoWindow)
             gdb.events.stop.connect(self.regw.refresh)
             gdb.events.stop.connect(self.btw.refresh)
             gdb.events.stop.connect(self.watchw.refresh)
+            gdb.events.stop.connect(self.srcw.refresh)
 
 LxGuiFUnction()
 

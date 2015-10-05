@@ -6,3 +6,4 @@ export LXDW=.
 xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py bt-dw" &
 xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py reg-dw" &
 xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py watch-dw" &
+xterm -fa 'Monospace' -fs 12 -e "python $LXDW/lx-dw.py src-dw" &
