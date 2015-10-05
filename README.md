@@ -35,7 +35,7 @@ Then, run gdb as usual you will see information is updated on debug consoles The
 (gdb) lx-del 3
 ```
 ## Screenshot
-
+![](https://raw.githubusercontent.com/houcheng/lx-dw/master/lx-dw.png)
 
 
 ## Some other useful gdb commands
