@@ -34,8 +34,11 @@ Then, run gdb as usual you will see information is updated on debug consoles The
 (gdb) lx-add p * s
 (gdb) lx-del 3
 ```
+## Screenshot
 
-## Some useful gdb commands
+
+
+## Some other useful gdb commands
 
 - layout source
 
