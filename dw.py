@@ -130,6 +130,7 @@ class BtDecoWindow(DecoWindow):
 class SrcDecoWindow(DecoWindow):
     def __init__(self, filename):
         DecoWindow.__init__(self, filename)
+        self.prelineno = 99999
     def parse(self, regstr, lineno):
         vlist = []
         lines = regstr.strip().split('\n')
@@ -142,10 +143,13 @@ class SrcDecoWindow(DecoWindow):
                 pass
             if lineno == int (line.split()[0]):
                 line = '=>' + line
+            elif self.prelineno == int (line.split()[0]):
+                line = '--' + line
             else:
                 line = '  ' + line
             vlist.append((str(index), line))
             index = index -1
+        self.prelineno = lineno
         return vlist
 
 
