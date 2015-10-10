@@ -1,7 +1,9 @@
 Linux Data Window Feature
 ------------------------------
 
-Linux Data Window is GDB scripts to display target detail information in separate GUI window during GDB debugging. The GDB target can be either normal program or kernel. There are four kinds of linux data window.
+Linux Data Window is GDB scripts to display target detail information in separate GUI window during GDB debugging. The GDB target can be either normal program or linux kernel running on remote or virtual machine.
+
+There are four kinds of linux data window:
 
 1. Source data window: show current source code.
 2. Watch data window: show watch variables, current stack content, current kernel thread's name, and assembly code pointed by current PC.
